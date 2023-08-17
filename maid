@@ -1,0 +1,75 @@
+#!/bin/bash
+#
+# Enforces a whitelist upon the files that are present in the $HOME directory
+# and purges any non-allowed files to $MAID_TEMP_FILES, before attempting to
+# move them to system's trash using the `trash` cmd.
+#
+# To make an allowlist:
+# ls $HOME -a > $XDG_CONFIG_HOME/maid
+# Then delete `.` and `..`. Remove any unwanted files.
+# Then run this script to clear.
+# You are able to use the same syntax `find` uses in order to match to multiple
+# files.
+#
+# Author: ayham
+# Website: ayham.xyz
+# Licence: Unlicense license
+
+# config
+MAID_ALLOW_FILES="${MAID_ALLOW_FILES:-$XDG_CONFIG_HOME/maid}"
+MAID_TEMP_FILES="${MAID_TEMP_FILES:-$XDG_CACHE_HOME/maid/}"
+mkdir -p "$MAID_TEMP_FILES"
+
+###########################################
+
+allow_pattern () {
+        files=$(find "$HOME" -maxdepth 1 -name "$pat")
+        allowed_files+=("$files")
+}
+
+delete_file () {
+        mv -fv "$f" "$MAID_TEMP_FILES/"
+}
+
+move_to_trash () {
+        if command -v trash &> /dev/null
+        then
+                trash -fv "$MAID_TEMP_FILES"
+        fi
+}
+
+###########################################
+
+# store original line count of home dir
+set -- "$(find "$HOME" -maxdepth 1 | tail -n +2 | wc -l)"
+original_wc=$1
+
+# store current list of files from $HOME
+# remove wanted files from list, then delete from this list
+to_remove_files=("$(find "$HOME" -maxdepth 1 | tail -n +2)")
+allowed_files=()
+
+# read list of matches from ~/.config/maid
+while read -r pat;
+do
+        allow_pattern
+done < "$MAID_ALLOW_FILES"
+
+# subtract $to_remove_files - $allowed_files
+listr=$(comm -23 <(printf "%s\n" "${to_remove_files[@]}" | sort) <(printf "%s\n" "${allowed_files[@]}" | sort))
+echo "DELETING"
+#IFS=$'\n' echo "${listr[*]}"
+#unset IFS
+echo  "$listr"
+
+for f in $listr; do
+        delete_file
+done
+move_to_trash
+
+# store new line count of home dir
+set -- "$(find "$HOME" -maxdepth 1 | tail -n +2 | wc -l)"
+new_wc=$1
+
+echo "DELETED "$((original_wc-new_wc))" FILES"
+echo "HOME IS $new_wc LINES"
