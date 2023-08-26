@@ -13,7 +13,6 @@
 #
 # Author: ayham
 # Website: ayham.xyz
-# Licence: Unlicense license
 
 # config
 MAID_ALLOW_FILES="${MAID_ALLOW_FILES:-$XDG_CONFIG_HOME/maid}"
