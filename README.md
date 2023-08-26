@@ -16,7 +16,5 @@ files.
 To install just copy the file contents into `~/.local/bin/`, or any directory in
 your `$PATH`.
 
-Author: ayham
+Author: ayham  
 Website: ayham.xyz
-Licence: Unlicense license
-
